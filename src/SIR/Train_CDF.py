@@ -125,6 +125,7 @@ def getwholedata_delta_SIR():
 
 
 train_t, train_x, test_t,  test_x, valid_t, valid_x = getwholedata_delta_SIR()
+N_Features = train_x.shape[1]
 
 def get_features_training_batch(x, t, batch_size):
     # the numpy function choice(length, number)
