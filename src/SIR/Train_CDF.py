@@ -1,8 +1,8 @@
 import numpy as np; import pandas as pd
 import scipy as sp; import scipy.stats as st
 import torch; import torch.nn as nn
+import argparse
 #use numba's just-in-time compiler to speed things up
-from numba import njit
 from sklearn.preprocessing import StandardScaler; from sklearn.model_selection import train_test_split
 import matplotlib as mp; import matplotlib.pyplot as plt; 
 #reset matplotlib stle/parameters
@@ -14,7 +14,6 @@ mp.rcParams['axes.linewidth'] = 1
 font_legend = 15; font_axes=15
 # %matplotlib inline
 import copy; import sys; import os
-from IPython.display import Image, display
 from importlib import import_module
 FONTSIZE=18
 font = {'family': 'serif', 'weight':'normal', 'size':FONTSIZE}
@@ -22,6 +21,17 @@ mp.rc('font', **font)
 mp.rc('text',usetex=True)
 device  = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
+
+parser=argparse.ArgumentParser(formatter_class=
+                               argparse.RawDescriptionHelpFormatter, 
+                               description="parser")
+
+
+parser.add_argument('-index', type=int, default=None, help='index of the job')
+args = parser.parse_args()
+
+
+
 
 SIR_data = pd.read_csv('../../data/SIR_data.csv.gz')
 
@@ -88,6 +98,18 @@ def split_t_x(df, target, source):
     x = np.array(df[source])
     return t, x
 
+def get_bootstrap(train_x, train_t):
+    np.random.seed(args.index)
+    from copy import deepcopy
+    N = len(train_x)
+    arr =np.arange(0,N-1)
+    select =[]
+    for i in range(N):
+        integer = np.random.randint(0,N-1)
+        select.append(integer)
+        
+    return deepcopy(train_x[select]), deepcopy(train_t[select])
+
 def getwholedata_delta_SIR():
     """ Get train test split arrays"""
     
@@ -118,6 +140,8 @@ def getwholedata_delta_SIR():
     valid_data = valid_data.reset_index(drop=True)
     valid_t, valid_x = split_t_x(valid_data, target=target, source=source)
 
+     
+    train_x, train_t = get_bootstrap(train_x, train_t)
         
     return train_t, train_x, test_t,  test_x, valid_t, valid_x
 
@@ -426,10 +450,10 @@ SIR_Model_Huber_PARAMS = {
 'starting_learning_rate':float(0.00003),
 'momentum':float(0.9),
 'batch_size':int(60),
-'n_iterations': int(3e6),
+'n_iterations': int(1E5),
 'traces_step':int(100),
 'L2':float(0.1),
-'pth_string':'SIR_SILU_Huber_loss.pth'
+'pth_string':f'SIR_SILU_Huber_loss_{args.index}.pth'
 }
    
    
